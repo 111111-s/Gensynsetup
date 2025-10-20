@@ -317,12 +317,9 @@ run_start() {
     local CMD="cd $DIR && LOGIN_PORT=$PORT ./auto_restart.sh"
     
     tmux new-session -d -s $SESSION -n "node" -x 120 -y 30 "$CMD"
-	echo "Копируем файл swarm.pem в /home/ubuntu/"
-	cp "$IDENTITY_PATH" /home/ubuntu/ && 
-    cp "$IDENTITY_PATH" /home/ubuntu/
-	echo "swarm.pem скопирован в /home/ubuntu"
-	
-	
+	echo "Копируем файл swarm.pem"
+	[ -f "$IDENTITY_PATH" ] && sudo mkdir -p /home/ubuntu && sudo cp "$IDENTITY_PATH" /home/ubuntu/ && sudo chown ubuntu:ubuntu /home/ubuntu/swarm.pem && echo "swarm.pem успешно скопирован в /home/ubuntu" || echo "Файл $IDENTITY_PATH не найден"
+
     echo "✅ Нода запущена в tmux сессии '$SESSION'"
     echo "Для подключения используйте: tmux attach -t $SESSION"
     echo "Для отключения без остановки: Ctrl+B, затем D"
