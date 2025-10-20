@@ -318,7 +318,14 @@ run_start() {
     
     tmux new-session -d -s $SESSION -n "node" -x 120 -y 30 "$CMD"
 	echo "Копируем файл swarm.pem"
-	[ -f "$IDENTITY_PATH" ] && sudo mkdir -p /home/ubuntu && sudo cp "$IDENTITY_PATH" /home/ubuntu/ && sudo chown ubuntu:ubuntu /home/ubuntu/swarm.pem && echo "swarm.pem успешно скопирован в /home/ubuntu" || echo "Файл $IDENTITY_PATH не найден"
+	if [ -f "./swarm.pem" ]; then
+		sudo mkdir -p /home/ubuntu
+		sudo cp ./swarm.pem /home/ubuntu/
+		sudo chown ubuntu:ubuntu /home/ubuntu/swarm.pem
+		echo "swarm.pem успешно скопирован в /home/ubuntu"
+	else
+		echo "Файл ./swarm.pem не найден"
+	fi
 
     echo "✅ Нода запущена в tmux сессии '$SESSION'"
     echo "Для подключения используйте: tmux attach -t $SESSION"
