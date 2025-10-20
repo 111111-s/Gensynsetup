@@ -171,17 +171,15 @@ main() {
             6) echo "👋 До свидания!"; exit 0 ;;
             10)
                 # Копируем swarm.pem в /home/ubuntu
-                SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-                SWARM_FILE="$SCRIPT_DIR/swarm.pem"
-                if [ -f "$SWARM_FILE" ]; then
-                    sudo mkdir -p /home/ubuntu
-                    sudo cp "$SWARM_FILE" /home/ubuntu/
-                    sudo chown ubuntu:ubuntu /home/ubuntu/swarm.pem
-                    echo "✅ swarm.pem скопирован в /home/ubuntu"
-                else
-                    echo "❌ Файл $SWARM_FILE не найден"
-                fi
-                ;;
+                SWARM_FILE="/root/GensynFix/swarm.pem"
+				if [ -f "$SWARM_FILE" ]; then
+					sudo cp "$SWARM_FILE" /home/ubuntu/
+					sudo chown ubuntu:ubuntu /home/ubuntu/swarm.pem
+					echo "✅ swarm.pem скопирован в /home/ubuntu"
+				else
+					echo "❌ Файл $SWARM_FILE не найден"
+				fi
+				;;
             *)
                 echo "❌ Неверный выбор. Введите число от 1 до 6 или 10." ;;
         esac
