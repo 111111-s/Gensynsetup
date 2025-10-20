@@ -12,8 +12,8 @@ safe_exit() {
 trap 'safe_exit "Произошла неожиданная ошибка на строке $LINENO"' ERR
 
 # Основные переменные
-BASE_DIR="/home/ubuntu"
-REPO_URL="https://github.com/111111-s/Gensynsetup.git"
+BASE_DIR="/root"
+REPO_URL="https://github.com/VaniaHilkovets/GensynFix.git"
 LOGIN_WAIT_TIMEOUT=10
 
 # Установка базовых пакетов
@@ -87,18 +87,18 @@ install_python_deps() {
 
 # Показать меню
 show_menu() {
-    echo -e "\n===== Меню Gensynsetup ====="
+    echo -e "\n===== Меню GensynFix ====="
     echo "1) Установить ноду"
     echo "2) Логин ноды"
     echo "3) Запуск ноды в tmux"
     echo "4) Удалить ноду"
-    echo "5) Обновить Gensynsetup"
+    echo "5) Обновить GensynFix"
     echo "6) Выйти"
 }
 
 # Проверить установлена ли нода
 check_node_installed() {
-    if [ ! -d "$BASE_DIR/Gensynsetup" ]; then
+    if [ ! -d "$BASE_DIR/GensynFix" ]; then
         echo "[!] Нода не установлена. Установите сначала (опция 1)."
         return 1
     fi
@@ -124,16 +124,16 @@ run_setup() {
     install_nodejs_global
     install_python_deps
     
-    echo "[+] Клонируем Gensynsetup..."
-    rm -rf "$BASE_DIR/Gensynsetup"
+    echo "[+] Клонируем GensynFix..."
+    rm -rf "$BASE_DIR/GensynFix"
     
-    git clone "$REPO_URL" "$BASE_DIR/Gensynsetup" || safe_exit "Не удалось клонировать репозиторий"
+    git clone "$REPO_URL" "$BASE_DIR/GensynFix" || safe_exit "Не удалось клонировать репозиторий"
     
     # Делаем скрипты исполняемыми
-    find "$BASE_DIR/Gensynsetup" -name "*.sh" -exec chmod +x {} \; || true
+    find "$BASE_DIR/GensynFix" -name "*.sh" -exec chmod +x {} \; || true
     
     # Настраиваем порт для ноды (используем порт 3000)
-    local DIR="$BASE_DIR/Gensynsetup"
+    local DIR="$BASE_DIR/GensynFix"
     if [ -f "$DIR/run_rl_swarm.sh" ]; then
         # Добавляем переменную LOGIN_PORT в начало файла если её нет
         if ! grep -q "LOGIN_PORT=" "$DIR/run_rl_swarm.sh"; then
@@ -153,7 +153,7 @@ run_login() {
         return 1
     fi
     
-    local DIR="$BASE_DIR/Gensynsetup"
+    local DIR="$BASE_DIR/GensynFix"
     local PORT=3000
     
     echo "[+] Начинаем логин ноды (порт $PORT)..."
@@ -304,20 +304,25 @@ run_start() {
     
     echo "[+] Запускаем ноду..."
     
-    local DIR="$BASE_DIR/Gensynsetup"
+    local DIR="$BASE_DIR/GensynFix"
     local PORT=3000
     
     # Проверяем что все скрипты исполняемые
     find "$DIR" -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
     
-    local SESSION="gensynsetup_node"
+    local SESSION="gensyn_node"
     tmux kill-session -t $SESSION 2>/dev/null || true
     
     # Запускаем команду (Node.js теперь доступен глобально)
     local CMD="cd $DIR && LOGIN_PORT=$PORT ./auto_restart.sh"
     
     tmux new-session -d -s $SESSION -n "node" -x 120 -y 30 "$CMD"
-    
+	echo "Копируем файл swarm.pem в /home/ubuntu/"
+	cp "$IDENTITY_PATH" /home/ubuntu/ && 
+    cp "$IDENTITY_PATH" /home/ubuntu/
+	echo "swarm.pem скопирован в /home/ubuntu"
+	
+	
     echo "✅ Нода запущена в tmux сессии '$SESSION'"
     echo "Для подключения используйте: tmux attach -t $SESSION"
     echo "Для отключения без остановки: Ctrl+B, затем D"
@@ -334,21 +339,21 @@ run_update() {
         return 1
     fi
     
-    echo "[+] Обновляем Gensynsetup..."
+    echo "[+] Обновляем GensynFix..."
     
-    local DIR="$BASE_DIR/Gensynsetup"
+    local DIR="$BASE_DIR/GensynFix"
     
     # Останавливаем ноду если работает
     echo "[*] Проверяем активные сессии..."
-    if tmux list-sessions 2>/dev/null | grep -q "gensynsetup_node"; then
+    if tmux list-sessions 2>/dev/null | grep -q "gensyn_node"; then
         echo "[!] Обнаружена работающая нода. Останавливаем..."
-        tmux kill-session -t "gensynsetup_node" 2>/dev/null || true
+        tmux kill-session -t "gensyn_node" 2>/dev/null || true
         sleep 2
     fi
     
     # Обновляем папку
     if [ -d "$DIR/.git" ]; then
-        echo "[+] Обновляем Gensynsetup из репозитория..."
+        echo "[+] Обновляем GensynFix из репозитория..."
         cd "$DIR"
         
         # Сохраняем важные файлы
@@ -395,10 +400,10 @@ run_cleanup() {
     echo "💀 Останавливаем все процессы..."
     
     # Убиваем tmux сессии
-    tmux list-sessions 2>/dev/null | grep -E "(node|gensynsetup_node|tunnel)" | awk -F: '{print $1}' | xargs -I{} tmux kill-session -t {} 2>/dev/null || true
+    tmux list-sessions 2>/dev/null | grep -E "(node|gensyn_node|tunnel)" | awk -F: '{print $1}' | xargs -I{} tmux kill-session -t {} 2>/dev/null || true
     
     # Убиваем процессы по именам
-    pkill -f Gensynsetup 2>/dev/null || true
+    pkill -f GensynFix 2>/dev/null || true
     pkill -f run_rl_swarm.sh 2>/dev/null || true
     pkill -f auto_restart.sh 2>/dev/null || true
     
@@ -408,7 +413,7 @@ run_cleanup() {
     sleep 3
     
     echo "🧹 Удаляем папку..."
-    rm -rf "$BASE_DIR/Gensynsetup" 2>/dev/null || true
+    rm -rf "$BASE_DIR/GensynFix" 2>/dev/null || true
     rm -f /tmp/tunnel*.log 2>/dev/null || true
     
     echo "✅ Нода удалена успешно"
@@ -416,7 +421,7 @@ run_cleanup() {
 
 # Основной цикл
 main() {
-    echo "=== Gensynsetup Manager ==="
+    echo "=== GensynFix Manager ==="
     echo "Версия: 3.1 (исправленный логин)"
     echo "Node.js: глобальный v20"
     
